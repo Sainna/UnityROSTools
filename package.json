@@ -1,0 +1,14 @@
+{
+  "name": "moe.sainna.rostools",
+  "version": "0.0.1",
+  "displayName": "ROS Tools",
+  "description": "ROS Tools to help Unity development of ROS applications",
+  "unity": "2021.3",
+  "unityRelease": "8f1",
+  "dependencies": {
+    "com.unity.robotics.ros-tcp-connector": "0.7.0"
+ },
+    "samples": [
+        
+    ]
+}
