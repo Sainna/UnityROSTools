@@ -1,9 +1,12 @@
 ﻿using UnityEngine;
 
-public class ServiceMessageListAttribute : PropertyAttribute
+namespace Sainna.Robotics.ROSTools
 {
-    public ServiceMessageListAttribute()
+    public class ServiceMessageListAttribute : PropertyAttribute
     {
+        public ServiceMessageListAttribute()
+        {
 
+        }
     }
 }
