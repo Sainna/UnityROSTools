@@ -17,48 +17,39 @@ namespace Sainna.Robotics.ROSTools.Editor
                 serializedObject.FindProperty("_ROSServices"),
                 false, true, true, true);
 
-            list.drawHeaderCallback = (Rect rect) => { EditorGUI.LabelField(rect, "ROS Services"); };
-
-
-            list.drawElementCallback =
-                (Rect rect, int index, bool isActive, bool isFocused) =>
-                {
+            list.drawHeaderCallback = (Rect rect) => {
+                EditorGUI.LabelField(rect, "ROS Services");
+            };
+            
+            // Draw all the element of the referenced property
+            list.drawElementCallback = 
+                (Rect rect, int index, bool isActive, bool isFocused) => {
                     var element = list.serializedProperty.GetArrayElementAtIndex(index);
                     EditorGUI.indentLevel = 1;
                     EditorGUI.PropertyField(rect, element, isActive);
                 };
-
-            list.elementHeightCallback = (index) =>
-            {
-                Repaint();
+            
+            // Get the height of all the properties element for proper display
+            list.elementHeightCallback = (index) => {
+                Repaint ();
                 var element = list.serializedProperty.GetArrayElementAtIndex(index);
                 return EditorGUI.GetPropertyHeight(element, element.isExpanded);
             };
-
-
-            list.onAddCallback = (ReorderableList l) =>
-            {
+            
+            
+            // When adding a new service, make sure to change the referenced Request
+            list.onAddCallback = (ReorderableList l) => {
                 var index = l.serializedProperty.arraySize;
-                if (index == 0)
-                {
-                    l.serializedProperty.arraySize++;
-                    return;
-                }
-
-                // var elementOrg = l.serializedProperty.GetArrayElementAtIndex(index-1);
                 l.serializedProperty.GetArrayElementAtIndex(index - 1).DuplicateCommand();
                 var elementDst = l.serializedProperty.GetArrayElementAtIndex(index);
-                // elementDst.DuplicateCommand();
-                // elementDst = elementOrg.Copy();
                 elementDst.FindPropertyRelative("DefaultRequest").managedReferenceValue = null;
             };
         }
-
-        public override void OnInspectorGUI()
-        {
+    	
+        public override void OnInspectorGUI() {
             serializedObject.Update();
             list.DoLayoutList();
-
+            
             serializedObject.ApplyModifiedProperties();
         }
     }

@@ -1,20 +1,49 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using RosMessageTypes.Geometry;
+using Sainna.Utils;
 using Unity.Robotics.ROSTCPConnector;
-using Unity.Robotics.ROSTCPConnector.MessageGeneration;
-using Unity.Robotics.ROSTCPConnector.ROSGeometry;
 using UnityEngine;
 
 namespace Sainna.Robotics.ROSTools
 {
     public class ROSServiceManager : MonoBehaviour
     {
+        // Singleton behavior
+        static ROSServiceManager _instance;
+
+        public static ROSServiceManager GetOrCreateInstance()
+        {
+            if (_instance == null)
+            {
+                // Prefer to use the ROSConnection in the scene, if any
+                _instance = FindObjectOfType<ROSServiceManager>();
+                if (_instance != null)
+                    return _instance;
+
+                GameObject instance = new GameObject("ROSServiceManager");
+                _instance = instance.AddComponent<ROSServiceManager>();
+                _instance.Init();
+
+            }
+            return _instance;
+        }
+
+        private void Awake()
+        {
+            if (_instance != null && _instance != this)
+            {
+                Destroy(this);
+                return;
+            }
+
+            _instance = this;
+        }
+
         private ROSConnection RosConnection;
 
-        [SerializeField] private ROSServiceSO[] Services;
+        [SerializeField]
+        [OnSerializedFieldChangedCall("Init")]
+        private ROSServiceSO[] Services;
 
         private Dictionary<string, ROSService> ServiceMap = new Dictionary<string, ROSService>();
 
@@ -22,67 +51,12 @@ namespace Sainna.Robotics.ROSTools
         public string[] GetServices() => ServiceMap.Keys.ToArray();
 
 
-        [SerializeField] bool _DontDestroyGameobjectOnLoad = false;
-
-        private static ROSServiceManager instance;
-
-        public static ROSServiceManager Instance
-        {
-            get
-            {
-                if (instance == null)
-                {
-                    Type t = typeof(ROSServiceManager);
-
-                    instance = (ROSServiceManager)FindObjectOfType(t);
-                    if (instance == null)
-                    {
-                        Debug.LogWarning($"No GameObject of type {t}");
-                    }
-                }
-
-                return instance;
-            }
-        }
-
-        virtual protected void Awake()
-        {
-            CheckInstance();
-        }
-
-        protected bool CheckInstance()
-        {
-            if (instance == null)
-            {
-                instance = this;
-                if (_DontDestroyGameobjectOnLoad)
-                    DontDestroyOnLoad(gameObject);
-                return true;
-            }
-            else if (Instance == this)
-            {
-                return true;
-            }
-
-            if (_DontDestroyGameobjectOnLoad)
-            {
-                Destroy(gameObject);
-            }
-            else
-            {
-                Destroy(this);
-            }
-
-            return false;
-        }
-
-
-        private void InitServiceConnection(ROSService service, ROSConnection connection)
+        protected virtual void InitServiceConnection(ROSService service, ROSConnection connection)
         {
             service.Init(connection);
         }
 
-        void InitAllServices()
+        protected virtual void InitAllServices()
         {
             foreach (var service in ServiceMap)
             {
@@ -90,11 +64,25 @@ namespace Sainna.Robotics.ROSTools
             }
         }
 
-        // Start is called before the first frame update
-        void Start()
-        {
-            RosConnection = GetROSConnection();
 
+        // In case some services need special initialisation processes (i.e. detour service for empty calls)
+        protected virtual void ServicePreProcess(ROSServiceSO.ROSServiceInfo serviceInfo, ROSService serviceAbst)
+        {
+
+        }
+
+        
+        // needs to be public to be called by the OnSerializedFieldChanged attribute
+        public void Init()
+        {
+            // Init manager: Get all the services and create a representation as ROSService in memory
+            RosConnection = GetROSConnection();
+            
+            ServiceMap.Clear();
+
+            if (Services == null)
+                return;
+            
             foreach (var serviceSo in Services)
             {
                 foreach (var serviceInfo in serviceSo.ROSServicesInfos)
@@ -103,6 +91,8 @@ namespace Sainna.Robotics.ROSTools
 
                     string serviceName = serviceInfo.ServiceName;
 
+                    ServicePreProcess(serviceInfo, serviceAbst);
+
                     ServiceMap.Add(serviceName, serviceAbst);
                 }
             }
@@ -110,7 +100,14 @@ namespace Sainna.Robotics.ROSTools
             InitAllServices();
         }
 
+        // Start is called before the first frame update
+        void Start()
+        {
+            Init();
+        }
 
+
+        // This allows for a centralized gestion of the connection and connection errors in case of disconnects
         public ROSConnection GetROSConnection()
         {
             if (RosConnection && RosConnection.HasConnectionThread)
@@ -120,6 +117,7 @@ namespace Sainna.Robotics.ROSTools
             }
             else
             {
+                // Re-init services if connection lost
                 RosConnection = ROSConnection.GetOrCreateInstance();
                 if (ServiceMap.Count > 0)
                 {
@@ -130,9 +128,6 @@ namespace Sainna.Robotics.ROSTools
 
             return RosConnection;
         }
-
-
-
 
         // EXAMPLE USAGE OF A SERVICE
 
@@ -167,7 +162,6 @@ namespace Sainna.Robotics.ROSTools
         //         serv.Call();
         //     }
         // }
-
 
     }
 }

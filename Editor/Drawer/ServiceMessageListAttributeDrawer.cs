@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-
 using System.Reflection;
 using Sainna.Utils;
 using UnityEditor;
@@ -20,25 +19,18 @@ namespace Sainna.Robotics.ROSTools.Editor
 
         public static void PopulateTypeNames()
         {
-
-            // foreach (var VARIABLE in CompilationPipeline.GetAssemblies())
-            // {
-            //     Debug.Log(VARIABLE.outputPath);
-            //     Debug.Log(VARIABLE.name);
-            // }
-            //
             var query = Assembly.Load("Assembly-CSharp")
                 .GetTypes()
                 .Where(t => t.Namespace?.Contains("RosMessageTypes") == true)
                 .Where(t => t.Name.Contains("Request"))
-                .Select(typeinfo => typeinfo.FullName);
+                .Select(typeinfo => typeinfo.AssemblyQualifiedName);
             var customTypes = query.ToArray();
 
             var stdQuery = Assembly.Load("Unity.Robotics.ROSTCPConnector.Messages")
                 .GetTypes()
                 .Where(t => t.Namespace?.Contains("RosMessageTypes") == true)
                 .Where(t => t.Name.Contains("Request"))
-                .Select(typeinfo => typeinfo.FullName);
+                .Select(typeinfo => typeinfo.AssemblyQualifiedName);
             var stdTypes = stdQuery.ToArray();
 
             TypeNames = customTypes.Concat(stdTypes).ToArray();
@@ -76,7 +68,7 @@ namespace Sainna.Robotics.ROSTools.Editor
             {
                 int currIndex = Array.FindIndex(TypeNames, s => s.Equals(curr));
                 if (currIndex == -1) currIndex = 0;
-                property.stringValue = TypeNames[EditorGUI.Popup(position, "Message type", currIndex, TypeNames)];
+                property.stringValue = TypeNames[EditorGUI.Popup(position, "Message type", currIndex, TypeNames.Select((fullname) => fullname.Remove(fullname.IndexOf(','))).ToArray())];
             }
 
             EditorGUI.EndProperty();

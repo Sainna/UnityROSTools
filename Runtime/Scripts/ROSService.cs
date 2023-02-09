@@ -33,6 +33,7 @@ namespace Sainna.Robotics.ROSTools
 
         public abstract void SetDefaultRequest(Message newDefaultRequest);
         public abstract Message GetDefaultRequest();
+
     }
 
     public class ROSServiceFactory
@@ -65,13 +66,15 @@ namespace Sainna.Robotics.ROSTools
         {
             if (!Connection || !Connection.HasConnectionThread)
             {
-                var serviceManager = ROSServiceManager.Instance;
+                var serviceManager = ROSServiceManager.GetOrCreateInstance();
                 if (serviceManager)
                 {
+                    
                     Connection = serviceManager.GetROSConnection();
                 }
             }
 
+            // For topic, just change this one
             Connection.RegisterRosService<TReq, TResp>(ServiceName);
         }
 

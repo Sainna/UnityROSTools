@@ -1,9 +1,8 @@
 ﻿using System;
+using Sainna.Utils.Extensions;
 using Unity.Robotics.ROSTCPConnector.MessageGeneration;
 using UnityEditor;
 using UnityEngine;
-using Sainna.Utils.Extensions;
-
 
 namespace Sainna.Robotics.ROSTools.Editor
 {
@@ -20,6 +19,14 @@ namespace Sainna.Robotics.ROSTools.Editor
             return defaultRequestProperty.CountInProperty();
         }
 
+        protected virtual void SetServiceName(SerializedProperty serviceNameProperty, GUIContent label)
+        {
+            if (serviceNameProperty != null && serviceNameProperty.stringValue != String.Empty)
+            {
+                label.text = serviceNameProperty.stringValue;
+            }
+        }
+
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             EditorGUI.BeginProperty(position, label, property);
@@ -31,7 +38,7 @@ namespace Sainna.Robotics.ROSTools.Editor
             var commentProperty = property.FindPropertyRelative("Comment");
             var defaultRequestProperty = property.FindPropertyRelative("DefaultRequest");
 
-            label.text = serviceNameProperty.stringValue;
+            SetServiceName(serviceNameProperty, label);
 
             property.isExpanded = EditorGUI.Foldout(rectFoldout, property.isExpanded, label);
             if (property.isExpanded)

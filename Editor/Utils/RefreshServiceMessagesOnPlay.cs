@@ -2,25 +2,22 @@
 using UnityEngine;
 using UnityEditor;
 
-
 namespace Sainna.Robotics.ROSTools.Editor
 {
 // ensure class initializer is called whenever scripts recompile
-    [InitializeOnLoadAttribute]
+    [InitializeOnLoad]
     public static class RefreshServiceMessagesOnPlay
     {
         // register an event handler when the class is initialized
         static RefreshServiceMessagesOnPlay()
         {
-            // EditorApplication.playModeStateChanged += EnumListAttributeDrawer.PopulateTypeNames;
-
             if (File.Exists(ServiceMessageListAttributeDrawer.TYPE_PATHS))
             {
                 ServiceMessageListAttributeDrawer.LoadMessageTypes();
             }
             else
             {
-                Debug.Log("Populating");
+                Debug.Log("[ROSTools] Populating type names...");
                 ServiceMessageListAttributeDrawer.PopulateTypeNames();
             }
         }
