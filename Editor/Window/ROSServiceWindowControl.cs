@@ -26,7 +26,7 @@ namespace Sainna.Robotics.ROSTools.Editor
         [SerializeReference] public Message Request;
 
         // Add menu item named "My Window" to the Window menu
-        private virtual void Awake()
+        protected virtual void Awake()
         {
             ThisSerialized = new SerializedObject(this);
         }
