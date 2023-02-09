@@ -66,7 +66,7 @@ namespace Sainna.Robotics.ROSTools
 
 
         // In case some services need special initialisation processes (i.e. detour service for empty calls)
-        protected virtual void ServicePreProcess(ROSServiceSO.ROSServiceInfo serviceInfo, ROSService serviceAbst)
+        protected virtual void ServicePreProcess(ROSServiceSO.ROSServiceInfo serviceInfo, ROSService serviceAbst, ref string serviceName)
         {
 
         }
@@ -91,7 +91,7 @@ namespace Sainna.Robotics.ROSTools
 
                     string serviceName = serviceInfo.ServiceName;
 
-                    ServicePreProcess(serviceInfo, serviceAbst);
+                    ServicePreProcess(serviceInfo, serviceAbst, ref serviceName);
 
                     ServiceMap.Add(serviceName, serviceAbst);
                 }
