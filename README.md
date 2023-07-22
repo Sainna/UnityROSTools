@@ -8,3 +8,6 @@ In the Unity Package manager, add a package from git URL and use the following:
 ```
 https://github.com/Sainna/UnityROSTools.git
 ```
+
+## Documentation
+Documentation is a work in progress. You can access it here: [https://sainna.github.io/UnityROSTools](https://sainna.github.io/UnityROSTools)
