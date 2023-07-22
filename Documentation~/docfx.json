@@ -5,8 +5,8 @@
                 {
                     "src": "../..",
                     "files": [
-                        // "Runtime/**/*.cs",
-                        // "Editor/**/*.cs",
+                        "workspace/Runtime/**/*.cs",
+                        "workspace/Editor/**/*.cs",
                         "rostools_dev/moe.sainna.rostools.*"
 
                     ],
