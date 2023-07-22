@@ -40,9 +40,16 @@ namespace Sainna.Robotics.ROSTools.Editor
             // When adding a new service, make sure to change the referenced Request
             list.onAddCallback = (ReorderableList l) => {
                 var index = l.serializedProperty.arraySize;
-                l.serializedProperty.GetArrayElementAtIndex(index - 1).DuplicateCommand();
-                var elementDst = l.serializedProperty.GetArrayElementAtIndex(index);
-                elementDst.FindPropertyRelative("DefaultRequest").managedReferenceValue = null;
+                if (index >= 1)
+                {
+                    l.serializedProperty.GetArrayElementAtIndex(index - 1).DuplicateCommand();
+                    var elementDst = l.serializedProperty.GetArrayElementAtIndex(index);
+                    elementDst.FindPropertyRelative("DefaultRequest").managedReferenceValue = null;
+                }
+                else
+                {
+                    l.serializedProperty.InsertArrayElementAtIndex(0);
+                }
             };
         }
     	

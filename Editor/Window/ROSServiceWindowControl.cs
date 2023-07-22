@@ -81,11 +81,12 @@ namespace Sainna.Robotics.ROSTools.Editor
                     EditorGUILayout.Separator();
                     ShowCustomRequest =
                         EditorGUILayout.BeginFoldoutHeaderGroup(ShowCustomRequest, "Custom service request");
-                    EditorGUILayout.EndFoldoutHeaderGroup();
+                    
                     if (ShowCustomRequest)
                     {
                         DrawServiceControl();
                     }
+                    EditorGUILayout.EndFoldoutHeaderGroup();
 
                 }
             // }
@@ -135,13 +136,21 @@ namespace Sainna.Robotics.ROSTools.Editor
         void DrawServiceControl()
         {
             int newSelected = 0;
-            EditorGUILayout.BeginHorizontal();
+            bool closeHorizontal = false;
+            
             if (ServiceList != null && ServiceList.Length > 0 && DisplayServiceList.Count == ServiceList.Length)
             {
+                EditorGUILayout.BeginHorizontal();
+                closeHorizontal = true;
                 newSelected = EditorGUILayout.Popup("Service name", SelectedService, DisplayServiceList.ToArray());
             }
 
-            if (ServiceList == null || GUILayout.Button("Refresh services"))
+            var refreshButton = GUILayout.Button("Refresh services");
+            
+            if(closeHorizontal)
+                EditorGUILayout.EndHorizontal();
+
+            if (ServiceList == null || refreshButton)
             {
                 ServiceList = GetServiceManager().GetServices();
                 DisplayServiceList.Clear();
@@ -155,7 +164,6 @@ namespace Sainna.Robotics.ROSTools.Editor
                 }
             }
 
-            EditorGUILayout.EndHorizontal();
             if (ServiceList.Length > 0)
             {
                 DrawMessageInspector(newSelected != SelectedService, newSelected);

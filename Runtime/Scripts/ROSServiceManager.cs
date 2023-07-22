@@ -42,7 +42,7 @@ namespace Sainna.Robotics.ROSTools
         private ROSConnection RosConnection;
 
         [SerializeField]
-        [OnSerializedFieldChangedCall("Init")]
+        // [OnSerializedFieldChangedCall("Init")]
         private ROSServiceSO[] Services;
 
         private Dictionary<string, ROSService> ServiceMap = new Dictionary<string, ROSService>();
