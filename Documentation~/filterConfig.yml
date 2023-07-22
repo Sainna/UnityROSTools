@@ -8,3 +8,5 @@ apiRules:
 - exclude:
     uidRegex: .*
     type: Namespace
+- exclude:
+    uidRegex: ^Sainna\.Utils

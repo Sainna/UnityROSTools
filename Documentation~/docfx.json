@@ -3,10 +3,12 @@
         {
             "src": [
                 {
-                    "src": "..",
+                    "src": "../..",
                     "files": [
-                        "Runtime/**/*.cs",
-                        "Editor/**/*.cs"
+                        // "Runtime/**/*.cs",
+                        // "Editor/**/*.cs",
+                        "rostools_dev/moe.sainna.rostools.*"
+
                     ],
                     "exclude": [
                         "Assets/Plugins/**"

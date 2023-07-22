@@ -1,4 +1,4 @@
-- name: Coniunctis nec qui
-  href: coniunctis.md
-- name: Etiam nantemque exul
-  href: etiam.md
+- name: Service management
+  href: service.md
+- name: (日本語)サービス管理
+  href: serviceJA.md

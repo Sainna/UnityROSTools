@@ -151,14 +151,14 @@ namespace Sainna.Robotics.ROSTools
         /// <param name="callback">The callback function that takes <typeparamref name="TResp"/> as a parameter</param>
         /// <example>
         /// <code>
-        /// var request = new PlanPoseRequest();
-        /// // Place Pose
-        /// request.target = new PoseMsg
-        /// {
-        ///     position = (target.position).To{FLU}(),
-        ///     orientation = Quaternion.identity.To{FLU}()
-        /// };
-        /// serv.Call(request, ExampleCallback);
+        /// // Get a reference to the current Service Manager
+        /// var service = ROSServiceManager.GetOrCreateInstance().GetService("dummy_service") as ROSService&lt;DummyRequest,DummyResponse&gt;;
+        ///
+        /// // Create your request object
+        /// var request = new DummyRequest();
+        ///
+        /// // Call the service
+        /// service.Call(request, ExampleCallback);
         ///
         /// void ExampleCallback(PlanPoseResponse resp)
         /// {
