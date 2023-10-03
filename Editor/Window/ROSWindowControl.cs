@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace Sainna.Robotics.ROSTools.Editor
 {
-    public class ROSServiceWindowControl : EditorWindow
+    public class ROSWindowControl : EditorWindow
     {
         Vector2 scrollPosition;
         
@@ -35,7 +35,7 @@ namespace Sainna.Robotics.ROSTools.Editor
         public static void ShowWindow()
         {
             //Show existing window instance. If one doesn't exist, make one.
-            EditorWindow.GetWindow(typeof(ROSServiceWindowControl), false, "ROS Service caller");
+            EditorWindow.GetWindow(typeof(ROSWindowControl), false, "ROS Service caller");
         }
 
         protected virtual void DrawAddons()
@@ -59,7 +59,7 @@ namespace Sainna.Robotics.ROSTools.Editor
                     EditorStyles.largeLabel.normal.textColor = Color.red;
                     GUILayout.Label("Disconnected", EditorStyles.largeLabel);
                     EditorStyles.largeLabel.normal.textColor = Color.white;
-                    if (!ROS.HasConnectionThread && GUILayout.Button("Connect"))
+                    if (Application.isPlaying && !ROS.HasConnectionThread && GUILayout.Button("Connect"))
                     {
                         ROS.Connect();
                     }
@@ -99,16 +99,16 @@ namespace Sainna.Robotics.ROSTools.Editor
 
         }
         
-        private ROSServiceManager ServiceManager;
+        private ROSManager _manager;
 
-        protected ROSServiceManager GetServiceManager()
+        protected ROSManager GetServiceManager()
         {
-            if (ServiceManager == null)
+            if (_manager == null)
             {
-                ServiceManager = ROSServiceManager.GetOrCreateInstance();
+                _manager = ROSManager.GetOrCreateInstance();
             }
 
-            return ServiceManager;
+            return _manager;
         }
 
 

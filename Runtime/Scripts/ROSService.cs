@@ -132,7 +132,7 @@ namespace Sainna.Robotics.ROSTools
         {
             if (!Connection || !Connection.HasConnectionThread)
             {
-                var serviceManager = ROSServiceManager.GetOrCreateInstance();
+                var serviceManager = ROSManager.GetOrCreateInstance();
                 if (serviceManager)
                 {
                     
@@ -152,7 +152,7 @@ namespace Sainna.Robotics.ROSTools
         /// <example>
         /// <code>
         /// // Get a reference to the current Service Manager
-        /// var service = ROSServiceManager.GetOrCreateInstance().GetService("dummy_service") as ROSService&lt;DummyRequest,DummyResponse&gt;;
+        /// var service = ROSManager.GetOrCreateInstance().GetService("dummy_service") as ROSService&lt;DummyRequest,DummyResponse&gt;;
         ///
         /// // Create your request object
         /// var request = new DummyRequest();
@@ -168,7 +168,7 @@ namespace Sainna.Robotics.ROSTools
         /// </example>
         public void Call(TReq req, Action<TResp> callback)
         {
-            if (Connection && Connection.HasConnectionThread)
+            if (Connection && Connection.HasConnectionThread && !Connection.HasConnectionError)
             {
                 Connection.SendServiceMessage<TResp>(ServiceName, req, callback);
             }
