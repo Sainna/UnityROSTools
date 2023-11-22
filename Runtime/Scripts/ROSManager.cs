@@ -31,7 +31,7 @@ namespace Sainna.Robotics.ROSTools
             return _instance;
         }
 
-        private void Awake()
+        protected virtual void Awake()
         {
             if (_instance != null && _instance != this)
             {
