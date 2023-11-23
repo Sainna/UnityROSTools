@@ -12,7 +12,7 @@ namespace Sainna.Robotics.ROSTools
     public class ROSManager : MonoBehaviour
     {
         // Singleton behavior
-        static ROSManager _instance;
+        protected static ROSManager _instance;
 
         public static ROSManager GetOrCreateInstance()
         {
