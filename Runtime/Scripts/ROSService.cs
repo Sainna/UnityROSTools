@@ -1,6 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
+using NativeWebSocket;
+using ROSBridgeLib;
+using SimpleJSON;
 using Unity.Robotics.ROSTCPConnector;
 using Unity.Robotics.ROSTCPConnector.MessageGeneration;
 using UnityEngine;
@@ -24,12 +28,12 @@ namespace Sainna.Robotics.ROSTools
         /// <remarks>
         /// todo: May or may not be useful to keep for each member
         /// </remarks>
-        public ROSConnection Connection { get; set; }
+        public ROSBridgeWebSocketConnection Connection { get; set; }
 
         /// <summary>
         /// Constructor for the <see cref="ROSService"/> abstract class
         /// </summary>
-        /// <seealso cref="ROSService{TReq,TResp}.ROSService(string,Message,ROSConnection)"/>
+        /// <seealso cref="ROSService"/>
         protected ROSService()
         {
         }
@@ -42,8 +46,8 @@ namespace Sainna.Robotics.ROSTools
         /// Used to create the service before the connection has been made.
         /// </summary>
         /// <param name="connection">The <see cref="ROSConnection"/> currently in use</param>
-        /// <seealso cref="ROSService{TReq, TResp}.ROSService(string, Message, ROSConnection)"/>
-        public void Init(ROSConnection connection)
+        /// <seealso cref="ROSService"/>
+        public void Init(ROSBridgeWebSocketConnection connection)
         {
             Connection = connection;
             Init();
@@ -114,8 +118,8 @@ namespace Sainna.Robotics.ROSTools
         /// Used to create the service before the connection has been made.
         /// </summary>
         /// <param name="connection">The <see cref="ROSConnection"/> currently in use</param>
-        /// <seealso cref="ROSService{TReq, TResp}.ROSService(string, Message, ROSConnection)"/>
-        public ROSService(string serviceName, Message defaultReq = null, ROSConnection connection = null)
+        /// <seealso cref="ROSService"/>
+        public ROSService(string serviceName, Message defaultReq = null, ROSBridgeWebSocketConnection connection = null)
         {
             ServiceName = serviceName;
             Connection = connection;
@@ -130,7 +134,7 @@ namespace Sainna.Robotics.ROSTools
 
         public sealed override void Init()
         {
-            if (!Connection || !Connection.HasConnectionThread)
+            if (Connection == null || Connection.GetWSState() != WebSocketState.Open)
             {
                 var serviceManager = ROSManager.GetOrCreateInstance();
                 if (serviceManager)
@@ -139,9 +143,6 @@ namespace Sainna.Robotics.ROSTools
                     Connection = serviceManager.GetROSConnection();
                 }
             }
-
-            // For topic, just change this one
-            Connection.RegisterRosService<TReq, TResp>(ServiceName);
         }
 
         /// <summary>
@@ -168,9 +169,9 @@ namespace Sainna.Robotics.ROSTools
         /// </example>
         public void Call(TReq req, Action<TResp> callback)
         {
-            if (Connection && Connection.HasConnectionThread && !Connection.HasConnectionError)
+            if (Connection != null && Connection.GetWSState() == WebSocketState.Open)
             {
-                Connection.SendServiceMessage<TResp>(ServiceName, req, callback);
+                Connection.CallService(bleh, ServiceName, "0", req.ToString());
             }
         }
 
@@ -225,6 +226,15 @@ namespace Sainna.Robotics.ROSTools
         void DefaultCallback(TResp resp)
         {
             Debug.Log($"Got an answer from {ServiceName}: {resp}");
+        }
+
+        void bleh(JSONNode node)
+        {
+            TResp a = new TResp();
+            foreach (var b in node.Childs)
+            {
+                Debug.Log(b.Value);
+            }
         }
 
 

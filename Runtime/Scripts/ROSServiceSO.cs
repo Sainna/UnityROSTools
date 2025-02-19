@@ -28,6 +28,8 @@ namespace Sainna.Robotics.ROSTools
                 var reqIdx = respType.LastIndexOf("Request", StringComparison.Ordinal);
                 respType = respType.Remove(reqIdx, "Request".Length);
                 respType = respType.Insert(reqIdx, "Response");
+                
+                
 
 
                 // TODO: add assembly to type name

@@ -6,7 +6,8 @@
   "unity": "2021.3",
   "unityRelease": "8f1",
   "dependencies": {
-    "com.unity.robotics.ros-tcp-connector": "0.7.0"
+    "com.unity.robotics.ros-tcp-connector": "0.7.0",
+    "com.endel.nativewebsocket": "1.1.5"
  },
     "samples": [
         

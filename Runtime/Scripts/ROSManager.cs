@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using NativeWebSocket;
+using ROSBridgeLib;
 using Sainna.Utils;
 using Unity.Robotics.ROSTCPConnector;
 using Unity.Robotics.ROSTCPConnector.MessageGeneration;
@@ -42,13 +44,14 @@ namespace Sainna.Robotics.ROSTools
             _instance = this;
 
             
-            RosConnection = GetROSConnection(false, false);
+            RosConnection = GetROSConnection( false);
             Init();
-            ROSConnected += InitAllServices;
-            StartCoroutine(WaitForRosConnection());
         }
 
-        private ROSConnection RosConnection;
+        private ROSBridgeConnectionsManager RosConnectionManager;
+        private ROSBridgeWebSocketConnection RosConnection;
+        [SerializeField] private string _ROSAdress;
+        [SerializeField] private int _ROSPort;
 
         [SerializeField]
         // [OnSerializedFieldChangedCall("Init")]
@@ -60,18 +63,10 @@ namespace Sainna.Robotics.ROSTools
         public string[] GetServices() => ServiceMap.Keys.ToArray();
 
 
-        protected virtual void InitServiceConnection(ROSService service, ROSConnection connection)
+        protected virtual void InitServiceConnection(ROSService service, ROSBridgeWebSocketConnection connection)
         {
             Debug.Log($"Registering {service.ServiceName}");
             service.Init(connection);
-        }
-
-        protected virtual void InitAllServices()
-        {
-            foreach (var service in ServiceMap)
-            {
-                InitServiceConnection(service.Value, RosConnection);
-            }
         }
 
 
@@ -84,19 +79,19 @@ namespace Sainna.Robotics.ROSTools
         public delegate void ROSConnectionDelegate();
         public event ROSConnectionDelegate ROSConnected; // event
 
-        IEnumerator WaitForRosConnection()
-        {
-            
-            Debug.Log("[ROSManager] Waiting for ROS");
-            WaitingOnRosConnection = true;
-            yield return new WaitWhile(() => RosConnection.HasConnectionError);
-            Debug.Log("[ROSManager] Connected to ROS");
-            WaitingOnRosConnection = false;
-
-            ROSConnected?.Invoke();
-
-            ROSConnected = null;
-        }
+        // IEnumerator WaitForRosConnection()
+        // {
+        //     
+        //     Debug.Log("[ROSManager] Waiting for ROS");
+        //     WaitingOnRosConnection = true;
+        //     yield return new WaitWhile(() => RosConnection.HasConnectionError);
+        //     Debug.Log("[ROSManager] Connected to ROS");
+        //     WaitingOnRosConnection = false;
+        //
+        //     ROSConnected?.Invoke();
+        //
+        //     ROSConnected = null;
+        // }
 
         public bool WaitingOnRosConnection { get; private set; } = false;
         // needs to be public to be called by the OnSerializedFieldChanged attribute
@@ -136,26 +131,23 @@ namespace Sainna.Robotics.ROSTools
 
 
         // This allows for a centralized control of the connection and connection errors in case of disconnects
-        public ROSConnection GetROSConnection(bool reinitServices = true, bool reinitPublishers = true)
+        public ROSBridgeWebSocketConnection GetROSConnection(bool reinitPublishers = false)
         {
-            if (RosConnection && RosConnection.HasConnectionThread)
+            if (RosConnection != null)
             {
-                if (RosConnection.HasConnectionError)
+                if (RosConnection.GetWSState() == WebSocketState.Closed)
                 {
                     Debug.Log("Reconnecting to ROS");
                     RosConnection.Connect();
                 }
+                
+                
             }
             else
             {
-                RosConnection = ROSConnection.GetOrCreateInstance();
+                var ROSBridgeManager = ROSBridgeConnectionsManager.Instance;
                 Debug.Log("Getting instance and connecting to ROS");
-                RosConnection.Connect();
-                if (reinitServices && ServiceMap.Count > 0)
-                {
-                    Debug.Log($"Reinitialising services...");
-                    InitAllServices();
-                }
+                ROSBridgeManager.GetConnection(_ROSAdress, _ROSPort);
 
                 if (reinitPublishers && PublisherMap.Count > 0)
                 {
@@ -173,7 +165,7 @@ namespace Sainna.Robotics.ROSTools
         private void RegisterPublisherAction(string publisherName, string publisherType)
         {
             Debug.Log($"Registered {publisherName}");
-            RosConnection.RegisterPublisher(publisherName, publisherType); 
+            RosConnection.AddPublisher(publisherName, publisherType); 
             PublisherMap.Add(publisherName, publisherType);
         }
         
@@ -181,20 +173,30 @@ namespace Sainna.Robotics.ROSTools
         {
             foreach (var publisher in PublisherMap)
             {
-                RosConnection.RegisterPublisher(publisher.Key, publisher.Value);
+                RosConnection.AddPublisher(publisher.Key, publisher.Value);
             }
         }
 
         private Dictionary<string, string> PublisherMap = new Dictionary<string, string>();
         public void RegisterPublisher<T>(string publisherName) where T : Message
         {
-            if (RosConnection.HasConnectionError)
+            if (RosConnection == null)
             {
-                ROSConnected += () => RegisterPublisherAction(publisherName, MessageRegistry.GetRosMessageName<T>());
+                RosConnection = GetROSConnection();
+                if(RosConnection.GetWSState() != WebSocketState.Open)
+                    RosConnection.OnSocketOpen(() => { RegisterPublisherAction(publisherName, 
+                        MessageRegistry.GetRosMessageName<T>());  });
+                else
+                {
+                    RegisterPublisherAction(publisherName, MessageRegistry.GetRosMessageName<T>());
+                }
+            }
+            else if (RosConnection.GetWSState() == WebSocketState.Closed)
+            {
                 if (!WaitingOnRosConnection)
                 {
+                    RosConnection.OnSocketOpen(() => { ROSConnected?.Invoke(); ROSConnected = null; });
                     RosConnection = GetROSConnection();
-                    StartCoroutine(WaitForRosConnection());
                 }
             }
             else
