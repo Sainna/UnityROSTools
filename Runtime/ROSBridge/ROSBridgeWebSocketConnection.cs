@@ -289,11 +289,11 @@ using SimpleJSON;
         /// <param name="topic">The name of the topic to publish to.</param>
         /// <param name="msg">The message to publish to the topic.</param>
         /// <remarks>AddPublisher() must be called with this topic's name at least once before publishing to it.</remarks>
-        public void Publish(String topic, ROSBridgeMsg msg)
+        public void Publish(String topic, string msg)
         {
             if (_ws != null)
             {
-                string s = ROSBridgeMsg.Publish(topic, msg.ToYAMLString());
+                string s = ROSBridgeMsg.Publish(topic, msg);
                 //Debug.Log ("Sending " + s);
                 _ws.SendText(s);
             }

@@ -2,12 +2,42 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Text;
 using NativeWebSocket;
 using ROSBridgeLib;
 using Sainna.Utils;
+using SimpleJSON;
 using Unity.Robotics.ROSTCPConnector;
 using Unity.Robotics.ROSTCPConnector.MessageGeneration;
 using UnityEngine;
+
+
+public static class RosMsgExtension
+{
+    
+    public static string ToJSON<T>(this T msg) where T : Message
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.Append("{");
+        bool first = true;
+        foreach (FieldInfo field in typeof(T).GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+        {
+            if (!first)
+                sb.Append(",");
+            if(field.FieldType.IsPrimitive)
+                sb.AppendLine($"\"{field.Name}\": {field.GetValue(msg)}");
+            first = false;
+        }
+        sb.Append("}");
+        return sb.ToString();
+    }
+    
+    public static T MessageFromJSON<T>(this JSONNode msg) where T : Message
+    {
+        return null;
+    }
+}
 
 namespace Sainna.Robotics.ROSTools
 {
