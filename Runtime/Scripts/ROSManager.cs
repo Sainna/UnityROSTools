@@ -15,18 +15,40 @@ using UnityEngine;
 
 public static class RosMsgExtension
 {
-    
+    //todo: TEMPORARY USE OF REFLECTION TO TEST!!!
+    // update unity's ROS TCP Connector serializer to include ROS Bridge serialization
     public static string ToJSON<T>(this T msg) where T : Message
     {
         StringBuilder sb = new StringBuilder();
         sb.Append("{");
         bool first = true;
-        foreach (FieldInfo field in typeof(T).GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+        foreach (FieldInfo field in typeof(T).GetFields(BindingFlags.Public 
+                                                        | BindingFlags.NonPublic 
+                                                        | BindingFlags.GetProperty 
+                                                        | BindingFlags.GetField
+                                                        | BindingFlags.Instance))
         {
             if (!first)
                 sb.Append(",");
             if(field.FieldType.IsPrimitive)
                 sb.AppendLine($"\"{field.Name}\": {field.GetValue(msg)}");
+            else
+            {
+                if (field.FieldType.IsArray)
+                {
+                    
+                }
+                else
+                {
+                    var val = field.GetValue(msg);
+                    var type = val.GetType();
+                    string recursion = (string)typeof(RosMsgExtension)
+                        .GetMethod("ToJSON")
+                        ?.MakeGenericMethod(type)
+                        .Invoke(null, new object[] { val });
+                    sb.AppendLine($"\"{field.Name}\": {recursion}");
+                }
+            }
             first = false;
         }
         sb.Append("}");
@@ -35,7 +57,47 @@ public static class RosMsgExtension
     
     public static T MessageFromJSON<T>(this JSONNode msg) where T : Message
     {
-        return null;
+        T respMsg = (T)Activator.CreateInstance(typeof(T));
+        foreach (var field in typeof(T).GetFields(BindingFlags.Public | BindingFlags.NonPublic 
+                                                  | BindingFlags.SetProperty 
+                                                  | BindingFlags.SetField
+                                                  | BindingFlags.Instance))
+        {
+            if (field.FieldType.IsPrimitive)
+            {
+                switch (field.FieldType)
+                {
+                    case { } t when t == typeof(int):
+                        field.SetValue(respMsg, msg[field.Name].AsInt);
+                        break;
+                    case { } t when t == typeof(float):
+                        field.SetValue(respMsg, msg[field.Name].AsFloat);
+                        break;
+                    case { } t when t == typeof(double):
+                        field.SetValue(respMsg, msg[field.Name].AsDouble);
+                        break;
+                    case { } t when t == typeof(string):
+                        field.SetValue(respMsg, msg[field.Name].Value);
+                        break;
+                    case { } t when t == typeof(bool):
+                        field.SetValue(respMsg, msg[field.Name].AsBool);
+                        break;
+                    default:
+                        Debug.LogError($"Type {field.FieldType} not supported");
+                        break;
+                }
+            }
+            else
+            {
+                var type = field.GetType();
+                var recursion = (Message)typeof(RosMsgExtension)
+                    .GetMethod("MessageFromJSON")
+                    ?.MakeGenericMethod(type)
+                    .Invoke(null, new object[] { msg[field.Name] });
+                field.SetValue(respMsg, recursion);
+            }
+        }
+        return respMsg;
     }
 }
 
