@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using JetBrains.Annotations;
-using Unity.Robotics.ROSTCPConnector.MessageGeneration;
+using RosSharp.RosBridgeClient;
 using UnityEngine;
 
 namespace Sainna.Robotics.ROSTools

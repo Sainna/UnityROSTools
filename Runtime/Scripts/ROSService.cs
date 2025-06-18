@@ -2,11 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
-using NativeWebSocket;
-using ROSBridgeLib;
-using SimpleJSON;
-using Unity.Robotics.ROSTCPConnector;
-using Unity.Robotics.ROSTCPConnector.MessageGeneration;
+using RosSharp.RosBridgeClient;
 using UnityEngine;
 
 namespace Sainna.Robotics.ROSTools
@@ -17,6 +13,14 @@ namespace Sainna.Robotics.ROSTools
     /// </summary>
     public abstract class ROSService
     {
+        private int CallCount;
+        
+        protected int GetCallCount()
+        {
+            CallCount++;
+            return CallCount;
+        }
+
         /// <summary>
         /// The service name, need to be the same as would be called in ROS
         /// </summary>
@@ -28,7 +32,7 @@ namespace Sainna.Robotics.ROSTools
         /// <remarks>
         /// todo: May or may not be useful to keep for each member
         /// </remarks>
-        public ROSBridgeWebSocketConnection Connection { get; set; }
+        public RosConnector Connection { get; set; }
 
         /// <summary>
         /// Constructor for the <see cref="ROSService"/> abstract class
@@ -47,7 +51,7 @@ namespace Sainna.Robotics.ROSTools
         /// </summary>
         /// <param name="connection">The <see cref="ROSConnection"/> currently in use</param>
         /// <seealso cref="ROSService"/>
-        public void Init(ROSBridgeWebSocketConnection connection)
+        public void Init(RosConnector connection)
         {
             Connection = connection;
             Init();
@@ -119,7 +123,7 @@ namespace Sainna.Robotics.ROSTools
         /// </summary>
         /// <param name="connection">The <see cref="ROSConnection"/> currently in use</param>
         /// <seealso cref="ROSService"/>
-        public ROSService(string serviceName, Message defaultReq = null, ROSBridgeWebSocketConnection connection = null)
+        public ROSService(string serviceName, Message defaultReq = null, RosConnector connection = null)
         {
             ServiceName = serviceName;
             Connection = connection;
@@ -134,7 +138,7 @@ namespace Sainna.Robotics.ROSTools
 
         public sealed override void Init()
         {
-            if (Connection == null || Connection.GetWSState() != WebSocketState.Open)
+            if (Connection == null || !Connection.IsConnected.WaitOne(0))
             {
                 var serviceManager = ROSManager.GetOrCreateInstance();
                 if (serviceManager)
@@ -167,11 +171,12 @@ namespace Sainna.Robotics.ROSTools
         /// }
         /// </code>
         /// </example>
-        public void Call(TReq req, Action<TResp> callback)
+        public void Call(TReq req, ServiceResponseHandler<TResp> callback)
         {
-            if (Connection != null && Connection.GetWSState() == WebSocketState.Open)
+            if (Connection == null || !Connection.IsConnected.WaitOne(0))
             {
-                Connection.CallService(bleh, ServiceName, "0", req.ToString());
+                //Connection.SendServiceMessage<TResp>(ServiceName, req, callback);
+                Connection.RosSocket.CallService<TReq,TResp>(ServiceName, callback, req);
             }
         }
 
@@ -180,10 +185,11 @@ namespace Sainna.Robotics.ROSTools
         /// </summary>
         /// <param name="callback">The callback function that takes <typeparamref name="TResp"/> as a parameter</param>
         /// <seealso cref="Call(TReq,System.Action{TResp})"/>
-        public void Call(Action<TResp> callback)
+        public void Call(ServiceResponseHandler<TResp> callback)
         {
             Call(DefaultRequest, callback);
         }
+
         
         /// <summary>
         /// Calls the service with a custom request and the <see cref="DefaultCallback"/>
@@ -226,15 +232,6 @@ namespace Sainna.Robotics.ROSTools
         void DefaultCallback(TResp resp)
         {
             Debug.Log($"Got an answer from {ServiceName}: {resp}");
-        }
-
-        void bleh(JSONNode node)
-        {
-            TResp a = new TResp();
-            foreach (var b in node.Childs)
-            {
-                Debug.Log(b.Value);
-            }
         }
 
 

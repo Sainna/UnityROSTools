@@ -1,105 +1,15 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using NativeWebSocket;
-using ROSBridgeLib;
+using RosSharp.RosBridgeClient;
 using Sainna.Utils;
-using SimpleJSON;
-using Unity.Robotics.ROSTCPConnector;
-using Unity.Robotics.ROSTCPConnector.MessageGeneration;
 using UnityEngine;
 
 
-public static class RosMsgExtension
-{
-    //todo: TEMPORARY USE OF REFLECTION TO TEST!!!
-    // update unity's ROS TCP Connector serializer to include ROS Bridge serialization
-    public static string ToJSON<T>(this T msg) where T : Message
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.Append("{");
-        bool first = true;
-        foreach (FieldInfo field in typeof(T).GetFields(BindingFlags.Public 
-                                                        | BindingFlags.NonPublic 
-                                                        | BindingFlags.GetProperty 
-                                                        | BindingFlags.GetField
-                                                        | BindingFlags.Instance))
-        {
-            if (!first)
-                sb.Append(",");
-            if(field.FieldType.IsPrimitive)
-                sb.AppendLine($"\"{field.Name}\": {field.GetValue(msg)}");
-            else
-            {
-                if (field.FieldType.IsArray)
-                {
-                    
-                }
-                else
-                {
-                    var val = field.GetValue(msg);
-                    var type = val.GetType();
-                    string recursion = (string)typeof(RosMsgExtension)
-                        .GetMethod("ToJSON")
-                        ?.MakeGenericMethod(type)
-                        .Invoke(null, new object[] { val });
-                    sb.AppendLine($"\"{field.Name}\": {recursion}");
-                }
-            }
-            first = false;
-        }
-        sb.Append("}");
-        return sb.ToString();
-    }
-    
-    public static T MessageFromJSON<T>(this JSONNode msg) where T : Message
-    {
-        T respMsg = (T)Activator.CreateInstance(typeof(T));
-        foreach (var field in typeof(T).GetFields(BindingFlags.Public | BindingFlags.NonPublic 
-                                                  | BindingFlags.SetProperty 
-                                                  | BindingFlags.SetField
-                                                  | BindingFlags.Instance))
-        {
-            if (field.FieldType.IsPrimitive)
-            {
-                switch (field.FieldType)
-                {
-                    case { } t when t == typeof(int):
-                        field.SetValue(respMsg, msg[field.Name].AsInt);
-                        break;
-                    case { } t when t == typeof(float):
-                        field.SetValue(respMsg, msg[field.Name].AsFloat);
-                        break;
-                    case { } t when t == typeof(double):
-                        field.SetValue(respMsg, msg[field.Name].AsDouble);
-                        break;
-                    case { } t when t == typeof(string):
-                        field.SetValue(respMsg, msg[field.Name].Value);
-                        break;
-                    case { } t when t == typeof(bool):
-                        field.SetValue(respMsg, msg[field.Name].AsBool);
-                        break;
-                    default:
-                        Debug.LogError($"Type {field.FieldType} not supported");
-                        break;
-                }
-            }
-            else
-            {
-                var type = field.GetType();
-                var recursion = (Message)typeof(RosMsgExtension)
-                    .GetMethod("MessageFromJSON")
-                    ?.MakeGenericMethod(type)
-                    .Invoke(null, new object[] { msg[field.Name] });
-                field.SetValue(respMsg, recursion);
-            }
-        }
-        return respMsg;
-    }
-}
 
 namespace Sainna.Robotics.ROSTools
 {
@@ -136,12 +46,12 @@ namespace Sainna.Robotics.ROSTools
             _instance = this;
 
             
-            RosConnection = GetROSConnection( false);
+            RosConnectionManager = GetROSConnection( false);
+            
             Init();
         }
 
-        private ROSBridgeConnectionsManager RosConnectionManager;
-        private ROSBridgeWebSocketConnection RosConnection;
+        private RosConnector RosConnectionManager;
         [SerializeField] private string _ROSAdress;
         [SerializeField] private int _ROSPort;
 
@@ -155,7 +65,7 @@ namespace Sainna.Robotics.ROSTools
         public string[] GetServices() => ServiceMap.Keys.ToArray();
 
 
-        protected virtual void InitServiceConnection(ROSService service, ROSBridgeWebSocketConnection connection)
+        protected virtual void InitServiceConnection(ROSService service, RosConnector connection)
         {
             Debug.Log($"Registering {service.ServiceName}");
             service.Init(connection);
@@ -170,20 +80,6 @@ namespace Sainna.Robotics.ROSTools
         
         public delegate void ROSConnectionDelegate();
         public event ROSConnectionDelegate ROSConnected; // event
-
-        // IEnumerator WaitForRosConnection()
-        // {
-        //     
-        //     Debug.Log("[ROSManager] Waiting for ROS");
-        //     WaitingOnRosConnection = true;
-        //     yield return new WaitWhile(() => RosConnection.HasConnectionError);
-        //     Debug.Log("[ROSManager] Connected to ROS");
-        //     WaitingOnRosConnection = false;
-        //
-        //     ROSConnected?.Invoke();
-        //
-        //     ROSConnected = null;
-        // }
 
         public bool WaitingOnRosConnection { get; private set; } = false;
         // needs to be public to be called by the OnSerializedFieldChanged attribute
@@ -220,26 +116,29 @@ namespace Sainna.Robotics.ROSTools
         {
             
         }
-
+        
 
         // This allows for a centralized control of the connection and connection errors in case of disconnects
-        public ROSBridgeWebSocketConnection GetROSConnection(bool reinitPublishers = false)
+        public RosConnector GetROSConnection(bool reinitPublishers = false)
         {
-            if (RosConnection != null)
+            if (RosConnectionManager != null)
             {
-                if (RosConnection.GetWSState() == WebSocketState.Closed)
+                if (!RosConnectionManager.IsConnected.WaitOne(0))
                 {
-                    Debug.Log("Reconnecting to ROS");
-                    RosConnection.Connect();
+                    Debug.LogWarning("NOT IMPLEMENTED Reconnecting to ROS");
+                    //RosConnection.Connect();
                 }
                 
                 
             }
             else
             {
-                var ROSBridgeManager = ROSBridgeConnectionsManager.Instance;
+                RosConnectionManager = FindFirstObjectByType<RosConnector>();
                 Debug.Log("Getting instance and connecting to ROS");
-                ROSBridgeManager.GetConnection(_ROSAdress, _ROSPort);
+                if (RosConnectionManager == null)
+                {
+                    RosConnectionManager = gameObject.AddComponent<RosConnector>();
+                }
 
                 if (reinitPublishers && PublisherMap.Count > 0)
                 {
@@ -248,7 +147,7 @@ namespace Sainna.Robotics.ROSTools
                 }
             }
 
-            return RosConnection;
+            return RosConnectionManager;
         }
 
 
@@ -256,44 +155,33 @@ namespace Sainna.Robotics.ROSTools
 
         private void RegisterPublisherAction(string publisherName, string publisherType)
         {
+            throw new NotImplementedException("RegisterPublisherAction is not implemented in ROSManager.");
             Debug.Log($"Registered {publisherName}");
-            RosConnection.AddPublisher(publisherName, publisherType); 
-            PublisherMap.Add(publisherName, publisherType);
+
+            //RosConnectionManager.RosSocket.AddPublisher(publisherName, publisherType); 
+            //PublisherMap.Add(publisherName, publisherType);
         }
         
         void ReinitPublishers()
         {
+            throw new NotImplementedException("ReinitPublishers is not implemented in ROSManager.");
             foreach (var publisher in PublisherMap)
             {
-                RosConnection.AddPublisher(publisher.Key, publisher.Value);
+                //RosConnection.AddPublisher(publisher.Key, publisher.Value);
             }
         }
 
-        private Dictionary<string, string> PublisherMap = new Dictionary<string, string>();
+        private Dictionary<string, Type> PublisherMap = new Dictionary<string, Type>();
         public void RegisterPublisher<T>(string publisherName) where T : Message
         {
-            if (RosConnection == null)
+            if (!RosConnectionManager.IsConnected.WaitOne(0))
             {
-                RosConnection = GetROSConnection();
-                if(RosConnection.GetWSState() != WebSocketState.Open)
-                    RosConnection.OnSocketOpen(() => { RegisterPublisherAction(publisherName, 
-                        MessageRegistry.GetRosMessageName<T>());  });
-                else
-                {
-                    RegisterPublisherAction(publisherName, MessageRegistry.GetRosMessageName<T>());
-                }
-            }
-            else if (RosConnection.GetWSState() == WebSocketState.Closed)
-            {
-                if (!WaitingOnRosConnection)
-                {
-                    RosConnection.OnSocketOpen(() => { ROSConnected?.Invoke(); ROSConnected = null; });
-                    RosConnection = GetROSConnection();
-                }
+                Debug.LogWarning("ROSManager: Cannot register publisher, not connected to ROS.");
             }
             else
             {
-                RegisterPublisherAction(publisherName, MessageRegistry.GetRosMessageName<T>());
+                RosConnectionManager.RosSocket.Advertise<T>(publisherName);
+                PublisherMap.Add(publisherName, typeof(T));
             }
         }
 

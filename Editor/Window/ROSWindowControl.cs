@@ -1,9 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.Robotics.ROSTCPConnector;
-using Unity.Robotics.ROSTCPConnector.MessageGeneration;
-using Unity.Robotics.ROSTCPConnector.ROSGeometry;
+using RosSharp.RosBridgeClient;
 using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
@@ -19,7 +17,7 @@ namespace Sainna.Robotics.ROSTools.Editor
         private int SelectedService = 0;
         private string[] ServiceList;
 
-        private ROSConnection ROS;
+        private ROSManager ROS;
         private SerializedObject ThisSerialized;
 
 
@@ -48,20 +46,21 @@ namespace Sainna.Robotics.ROSTools.Editor
         {
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
             if (ROS == null)
-                ROS = ROSConnection.GetOrCreateInstance();
+                ROS = ROSManager.GetOrCreateInstance();
 
 
             // if (Application.isPlaying)
             // {
                 GUILayout.Label("Connection status", EditorStyles.boldLabel);
-                if ((ROS.HasConnectionError || !ROS.HasConnectionThread))
+                if (!(ROS.GetROSConnection().IsConnected.WaitOne(0)))
                 {
                     EditorStyles.largeLabel.normal.textColor = Color.red;
                     GUILayout.Label("Disconnected", EditorStyles.largeLabel);
                     EditorStyles.largeLabel.normal.textColor = Color.white;
-                    if (Application.isPlaying && !ROS.HasConnectionThread && GUILayout.Button("Connect"))
+                    if (GUILayout.Button("Connect"))
                     {
-                        ROS.Connect();
+                        Debug.LogWarning("CONNECTION VIA EDITOR WINDOW NOT IMPLEMENTED");
+                        //ROS.Connect();
                     }
                 }
                 else
@@ -71,7 +70,8 @@ namespace Sainna.Robotics.ROSTools.Editor
                     EditorStyles.largeLabel.normal.textColor = Color.white;
                     if (GUILayout.Button("Disconnect"))
                     {
-                        ROS.Disconnect();
+                        Debug.LogWarning("DISCONNECTION VIA EDITOR WINDOW NOT IMPLEMENTED");
+                        //ROS.Disconnect();
                     }
 
                     EditorGUILayout.Space(12.0f);
