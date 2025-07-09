@@ -51,7 +51,8 @@ namespace Sainna.Robotics.ROSTools.Editor
 
                 Type reqType = Type.GetType(messageTypeProperty.stringValue + ", Assembly-CSharp") ??
                                Type.GetType(messageTypeProperty.stringValue +
-                                            ", Unity.Robotics.ROSTCPConnector.Messages");
+                                            ", siemens.ros-sharp.Runtime");
+                //todo: ROS-sharp broke the default request by using {get; set;} for each properties
                 if (reqType != null)
                 {
                     if (defaultRequestProperty.managedReferenceValue == null ||
@@ -60,6 +61,7 @@ namespace Sainna.Robotics.ROSTools.Editor
                     {
                         var rawOb = Activator.CreateInstance(reqType) as Message;
                         defaultRequestProperty.managedReferenceValue = rawOb;
+                        
                     }
 
                     EditorGUI.indentLevel = 2;
