@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection.Emit;
 using System.Text;
 using RosSharp.RosBridgeClient;
 using UnityEngine;
@@ -138,7 +139,7 @@ namespace Sainna.Robotics.ROSTools
 
         public sealed override void Init()
         {
-            if (Connection == null || !Connection.IsConnected.WaitOne(0))
+            if (Connection == null)
             {
                 var serviceManager = ROSManager.GetOrCreateInstance();
                 if (serviceManager)
@@ -173,10 +174,26 @@ namespace Sainna.Robotics.ROSTools
         /// </example>
         public void Call(TReq req, ServiceResponseHandler<TResp> callback)
         {
-            if (Connection == null || !Connection.IsConnected.WaitOne(0))
+            // 1) If we're already good, call immediately (only one WaitOne here)
+            if (Connection != null && Connection.IsConnected.WaitOne(0))
             {
-                //Connection.SendServiceMessage<TResp>(ServiceName, req, callback);
-                Connection.RosSocket.CallService<TReq,TResp>(ServiceName, callback, req);
+                Debug.Log($"Calling service {ServiceName} with request: {req}");
+                Connection.RosSocket.CallService(ServiceName, callback, req);
+                return;
+            }
+
+            // 2) Otherwise, try to grab a fresh connection
+            Connection = ROSManager.GetOrCreateInstance().GetROSConnection();
+
+            // 3) If reconnect succeeded, call; else warn
+            if (Connection != null && Connection.IsConnected.WaitOne(0))
+            {
+                Debug.Log($"Calling service {ServiceName} with request: {req}");
+                Connection.RosSocket.CallService(ServiceName, callback, req);
+            }
+            else
+            {
+                Debug.LogWarning($"Cannot call service {ServiceName} because the connection is not established.");
             }
         }
 
@@ -229,9 +246,9 @@ namespace Sainna.Robotics.ROSTools
         //     Call(request as TReq, callback);
         // }
 
-        void DefaultCallback(TResp resp)
+        private void DefaultCallback(TResp resp)
         {
-            Debug.Log($"Got an answer from {ServiceName}: {resp}");
+            Debug.Log($"Got an answer fromn {ServiceName}: {resp}");
         }
 
 

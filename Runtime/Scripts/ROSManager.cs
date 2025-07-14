@@ -23,7 +23,7 @@ namespace Sainna.Robotics.ROSTools
             if (_instance == null)
             {
                 // Prefer to use the ROSConnection in the scene, if any
-                _instance = FindObjectOfType<ROSManager>();
+                _instance = FindFirstObjectByType<ROSManager>();
                 if (_instance != null)
                     return _instance;
 
@@ -107,6 +107,8 @@ namespace Sainna.Robotics.ROSTools
                     ServicePreProcess(serviceInfo, serviceAbst, ref serviceName);
 
                     ServiceMap.Add(serviceName, serviceAbst);
+                    
+                    //InitServiceConnection(serviceAbst, RosConnectionManager);
                 }
             }
         }

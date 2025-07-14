@@ -31,6 +31,14 @@ namespace Sainna.Robotics.ROSTools
 
         public Quaternion toUnity => coordinateSpace.ConvertToRUF(internalQuat);
 
+        public RosSharp.RosBridgeClient.MessageTypes.Geometry.Quaternion toROS =>
+            new(
+                x = internalQuat.x,
+                y = internalQuat.y,
+                z = internalQuat.z,
+                w = internalQuat.w
+            );
+
 
         public static explicit operator Quaternion<C>(Quaternion quat) => new Quaternion<C>(quat);
         public static explicit operator Quaternion(Quaternion<C> rquat) => rquat.toUnity;

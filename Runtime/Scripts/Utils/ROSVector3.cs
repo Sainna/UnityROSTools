@@ -1,6 +1,8 @@
 ﻿
 using System;
+using RosSharp.RosBridgeClient.MessageTypes.Geometry;
 using UnityEngine;
+using Vector3 = UnityEngine.Vector3;
 
 // From com.unity.robotics.ros-tcp-connector/Runtime/ROSGeometry/ROSVector3.cs
 namespace Sainna.Robotics.ROSTools
@@ -32,6 +34,13 @@ namespace Sainna.Robotics.ROSTools
 
         public Vector3 toUnity => s_CoordinateSpace.ConvertToRUF(internalVector);
         public Vector3 toUnityAngularVelocity => s_CoordinateSpace.ConvertAngularVelocityToRUF(internalVector);
+        
+        public Point toROS => new Point
+        {
+            x = internalVector.x,
+            y = internalVector.y,
+            z = internalVector.z
+        };
 
         public static explicit operator Vector3<C>(Vector3 vec)
         {
