@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.Robotics.ROSTCPConnector;
-using Unity.Robotics.ROSTCPConnector.MessageGeneration;
+using System.Reflection.Emit;
+using System.Text;
+using RosSharp.RosBridgeClient;
+using Sainna.Robotics.ROSTools.Logging;
 using UnityEngine;
 
 namespace Sainna.Robotics.ROSTools
@@ -13,6 +15,14 @@ namespace Sainna.Robotics.ROSTools
     /// </summary>
     public abstract class ROSService
     {
+        private int CallCount;
+        
+        protected int GetCallCount()
+        {
+            CallCount++;
+            return CallCount;
+        }
+
         /// <summary>
         /// The service name, need to be the same as would be called in ROS
         /// </summary>
@@ -24,12 +34,12 @@ namespace Sainna.Robotics.ROSTools
         /// <remarks>
         /// todo: May or may not be useful to keep for each member
         /// </remarks>
-        public ROSConnection Connection { get; set; }
+        public RosConnector Connection { get; set; }
 
         /// <summary>
         /// Constructor for the <see cref="ROSService"/> abstract class
         /// </summary>
-        /// <seealso cref="ROSService{TReq,TResp}.ROSService(string,Message,ROSConnection)"/>
+        /// <seealso cref="ROSService"/>
         protected ROSService()
         {
         }
@@ -42,8 +52,8 @@ namespace Sainna.Robotics.ROSTools
         /// Used to create the service before the connection has been made.
         /// </summary>
         /// <param name="connection">The <see cref="ROSConnection"/> currently in use</param>
-        /// <seealso cref="ROSService{TReq, TResp}.ROSService(string, Message, ROSConnection)"/>
-        public void Init(ROSConnection connection)
+        /// <seealso cref="ROSService"/>
+        public void Init(RosConnector connection)
         {
             Connection = connection;
             Init();
@@ -114,8 +124,8 @@ namespace Sainna.Robotics.ROSTools
         /// Used to create the service before the connection has been made.
         /// </summary>
         /// <param name="connection">The <see cref="ROSConnection"/> currently in use</param>
-        /// <seealso cref="ROSService{TReq, TResp}.ROSService(string, Message, ROSConnection)"/>
-        public ROSService(string serviceName, Message defaultReq = null, ROSConnection connection = null)
+        /// <seealso cref="ROSService"/>
+        public ROSService(string serviceName, Message defaultReq = null, RosConnector connection = null)
         {
             ServiceName = serviceName;
             Connection = connection;
@@ -130,18 +140,15 @@ namespace Sainna.Robotics.ROSTools
 
         public sealed override void Init()
         {
-            if (!Connection || !Connection.HasConnectionThread)
+            if (Connection == null)
             {
-                var serviceManager = ROSServiceManager.GetOrCreateInstance();
+                var serviceManager = ROSManager.GetOrCreateInstance();
                 if (serviceManager)
                 {
                     
                     Connection = serviceManager.GetROSConnection();
                 }
             }
-
-            // For topic, just change this one
-            Connection.RegisterRosService<TReq, TResp>(ServiceName);
         }
 
         /// <summary>
@@ -152,7 +159,7 @@ namespace Sainna.Robotics.ROSTools
         /// <example>
         /// <code>
         /// // Get a reference to the current Service Manager
-        /// var service = ROSServiceManager.GetOrCreateInstance().GetService("dummy_service") as ROSService&lt;DummyRequest,DummyResponse&gt;;
+        /// var service = ROSManager.GetOrCreateInstance().GetService("dummy_service") as ROSService&lt;DummyRequest,DummyResponse&gt;;
         ///
         /// // Create your request object
         /// var request = new DummyRequest();
@@ -166,11 +173,28 @@ namespace Sainna.Robotics.ROSTools
         /// }
         /// </code>
         /// </example>
-        public void Call(TReq req, Action<TResp> callback)
+        public void Call(TReq req, ServiceResponseHandler<TResp> callback)
         {
-            if (Connection && Connection.HasConnectionThread)
+            // 1) If we're already good, call immediately (only one WaitOne here)
+            if (Connection != null && Connection.IsConnected.WaitOne(0))
             {
-                Connection.SendServiceMessage<TResp>(ServiceName, req, callback);
+                //Debug.Log($"Calling service {ServiceName} with request: {req}");
+                Connection.RosSocket.CallService(ServiceName, callback, req);
+                return;
+            }
+
+            // 2) Otherwise, try to grab a fresh connection
+            Connection = ROSManager.GetOrCreateInstance().GetROSConnection();
+
+            // 3) If reconnect succeeded, call; else warn
+            if (Connection != null && Connection.IsConnected.WaitOne(0))
+            {
+                //Debug.Log($"Calling service {ServiceName} with request: {req}");
+                Connection.RosSocket.CallService(ServiceName, callback, req);
+            }
+            else
+            {
+                ROSLogger.LogWarning($"Cannot call service '{ServiceName}' because the connection is not established.", ROSLogger.CATEGORY_SERVICES);
             }
         }
 
@@ -179,10 +203,11 @@ namespace Sainna.Robotics.ROSTools
         /// </summary>
         /// <param name="callback">The callback function that takes <typeparamref name="TResp"/> as a parameter</param>
         /// <seealso cref="Call(TReq,System.Action{TResp})"/>
-        public void Call(Action<TResp> callback)
+        public void Call(ServiceResponseHandler<TResp> callback)
         {
             Call(DefaultRequest, callback);
         }
+
         
         /// <summary>
         /// Calls the service with a custom request and the <see cref="DefaultCallback"/>
@@ -222,9 +247,9 @@ namespace Sainna.Robotics.ROSTools
         //     Call(request as TReq, callback);
         // }
 
-        void DefaultCallback(TResp resp)
+        private void DefaultCallback(TResp resp)
         {
-            Debug.Log($"Got an answer from {ServiceName}: {resp}");
+            ROSLogger.LogInfo($"Got response from service '{ServiceName}': {resp}", ROSLogger.CATEGORY_SERVICES);
         }
 
 

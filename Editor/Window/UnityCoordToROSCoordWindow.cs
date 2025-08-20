@@ -1,9 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.Robotics.ROSTCPConnector;
-using Unity.Robotics.ROSTCPConnector.MessageGeneration;
-using Unity.Robotics.ROSTCPConnector.ROSGeometry;
 using UnityEditor;
 using UnityEngine;
 

@@ -21,14 +21,14 @@ namespace Sainna.Robotics.ROSTools.Editor
         {
             var query = Assembly.Load("Assembly-CSharp")
                 .GetTypes()
-                .Where(t => t.Namespace?.Contains("RosMessageTypes") == true)
+                .Where(t => t.Namespace?.Contains("MessageTypes") == true)
                 .Where(t => t.Name.Contains("Request"))
                 .Select(typeinfo => typeinfo.AssemblyQualifiedName);
             var customTypes = query.ToArray();
 
-            var stdQuery = Assembly.Load("Unity.Robotics.ROSTCPConnector.Messages")
+            var stdQuery = Assembly.Load("siemens.ros-sharp.Runtime")
                 .GetTypes()
-                .Where(t => t.Namespace?.Contains("RosMessageTypes") == true)
+                .Where(t => t.Namespace?.Contains("MessageTypes") == true)
                 .Where(t => t.Name.Contains("Request"))
                 .Select(typeinfo => typeinfo.AssemblyQualifiedName);
             var stdTypes = stdQuery.ToArray();
