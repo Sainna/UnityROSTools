@@ -50,33 +50,6 @@ var subscriber = manager.CreateSubscriber<String>("/other_topic", (msg) => {
 });
 ```
 
-## Unity Best Practices Implemented
-
-### 1. Singleton Pattern
-- Thread-safe singleton implementation
-- Automatic instance creation when needed
-- Proper cleanup on destroy
-
-### 2. Editor Integration
-- Custom Property Drawers for service configuration
-- Editor window for runtime testing
-- Automatic type discovery and refresh
-
-### 3. Error Handling
-- Comprehensive null checks
-- Graceful degradation when ROS is unavailable
-- Clear error messages and warnings
-
-### 4. Lifecycle Management
-- Automatic cleanup of resources
-- Connection state monitoring
-- Graceful handling of connection loss
-
-### 5. Inspector Friendly
-- Serialized fields with tooltips
-- Header groups for organization
-- Validation in property setters
-
 ## Architecture Benefits
 
 ### Plug-and-Play Philosophy
