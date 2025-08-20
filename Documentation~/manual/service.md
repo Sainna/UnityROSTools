@@ -10,9 +10,9 @@ If your message type supports it, you can also set a default request here. Your 
 
 If your Message type is not visible, try to refresh the types by selecting `ROS Tools → Refresh enum types`.
 
-Once your Scriptable Object is ready, add a `ROSServiceManager` Component to a GameObject in your scene and reference your Scriptable Object there. Note that only one `ROSServiceManager` may exist in a scene at one time.
+Once your Scriptable Object is ready, add a `ROSManager` Component to a GameObject in your scene and reference your Scriptable Object there. Note that only one `ROSManager` may exist in a scene at one time.
 
-![ROSServiceManager component](../resources/ServiceManagerComponent.png)
+![ROSManager component](../resources/ServiceManagerComponent.png)
 
 ## Using the GUI to call a service
 You can open the Service Caller window by clicking on `ROS Tools → Service Caller`.
@@ -28,7 +28,7 @@ To call a Service from a script, follow the following code example:
     void ExampleCall()
     {
         // Get a reference to the current Service Manager
-        ROSServiceManager serviceManager = ROSServiceManager.GetOrCreateInstance();
+        ROSManager serviceManager = ROSManager.GetOrCreateInstance();
 
         // Get the desired service and cast it with the proper Request/Response types
         var service = serviceManager.GetService("dummy_service") as ROSService<DummyRequest, DummyResponse>;

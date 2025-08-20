@@ -1,4 +1,12 @@
 - name: Service management
   href: service.md
+- name: Topic management
+  href: topics.md
+- name: Auto-reconnect feature
+  href: auto-reconnect.md
+- name: Logging system
+  href: logging.md
+- name: Developer guide
+  href: developer-guide.md
 - name: (日本語)サービス管理
   href: serviceJA.md

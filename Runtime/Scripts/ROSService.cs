@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Reflection.Emit;
 using System.Text;
 using RosSharp.RosBridgeClient;
+using Sainna.Robotics.ROSTools.Logging;
 using UnityEngine;
 
 namespace Sainna.Robotics.ROSTools
@@ -177,7 +178,7 @@ namespace Sainna.Robotics.ROSTools
             // 1) If we're already good, call immediately (only one WaitOne here)
             if (Connection != null && Connection.IsConnected.WaitOne(0))
             {
-                Debug.Log($"Calling service {ServiceName} with request: {req}");
+                //Debug.Log($"Calling service {ServiceName} with request: {req}");
                 Connection.RosSocket.CallService(ServiceName, callback, req);
                 return;
             }
@@ -188,12 +189,12 @@ namespace Sainna.Robotics.ROSTools
             // 3) If reconnect succeeded, call; else warn
             if (Connection != null && Connection.IsConnected.WaitOne(0))
             {
-                Debug.Log($"Calling service {ServiceName} with request: {req}");
+                //Debug.Log($"Calling service {ServiceName} with request: {req}");
                 Connection.RosSocket.CallService(ServiceName, callback, req);
             }
             else
             {
-                Debug.LogWarning($"Cannot call service {ServiceName} because the connection is not established.");
+                ROSLogger.LogWarning($"Cannot call service '{ServiceName}' because the connection is not established.", ROSLogger.CATEGORY_SERVICES);
             }
         }
 
@@ -248,7 +249,7 @@ namespace Sainna.Robotics.ROSTools
 
         private void DefaultCallback(TResp resp)
         {
-            Debug.Log($"Got an answer fromn {ServiceName}: {resp}");
+            ROSLogger.LogInfo($"Got response from service '{ServiceName}': {resp}", ROSLogger.CATEGORY_SERVICES);
         }
 
 

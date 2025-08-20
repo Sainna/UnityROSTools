@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using Sainna.Robotics.ROSTools.Logging;
 using UnityEngine;
 using UnityEditor;
 
@@ -17,7 +18,7 @@ namespace Sainna.Robotics.ROSTools.Editor
             }
             else
             {
-                Debug.Log("[ROSTools] Populating type names...");
+                ROSLogger.LogInfo("Populating type names...", ROSLogger.CATEGORY_EDITOR);
                 ServiceMessageListAttributeDrawer.PopulateTypeNames();
             }
         }

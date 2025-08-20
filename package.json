@@ -7,6 +7,6 @@
   "unityRelease": "0f1",
   "samples": [],
   "dependencies": {
-    "com.siemens.ros-sharp": "2.1.1"
+    "com.siemens.ros-sharp": "2.2.0"
   }
 }

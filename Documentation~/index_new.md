@@ -6,18 +6,15 @@ Welcome to ROS Tools for Unity! This package provides a way to reduce boilerplat
 
 - **Service Management**: Easy-to-use ROS service calling with Scriptable Object configuration
 - **Topic Management**: Dynamic publisher and subscriber creation without complex setup
-- **Auto-Reconnect**: Robust automatic reconnection with configurable retry attempts and timeouts
-- **Centralized Logging**: Professional logging system with configurable levels and categories
 - **Plug-and-Play**: Minimal configuration required, automatic connection management
 - **Unity Integration**: Seamlessly integrates with Unity's component system
-- **Error Handling**: Comprehensive error handling and graceful degradation
+- **Error Handling**: Robust connection management with automatic reconnection
 
 ## Supported ROS Operations
 
 - ✅ **Services**: Call ROS services with custom requests and responses
 - ✅ **Topics**: Publish and subscribe to ROS topics dynamically
-- ✅ **Auto-Reconnect**: Automatic connection recovery with configurable parameters
-- ✅ **Connection Management**: Robust connection handling with events and monitoring
+- ✅ **Connection Management**: Automatic ROS connection handling
 - ✅ **Message Types**: Support for all standard and custom ROS message types
 
 ## How to install
@@ -32,7 +29,7 @@ https://github.com/Sainna/UnityROSTools.git
 
 ### Services
 
-1. Create a ROSServiceSO (Scriptable Object) via `Assets → Create → ROS Tools → Service Caller`
+1. Create a ROSServiceSO (Scriptable Object) via `Assets → Create → ScriptableObjects → ROS → Service Caller`
 2. Add a `ROSManager` component to a GameObject in your scene
 3. Reference your Scriptable Object in the ROSManager
 4. Call services from your scripts using the simple API
@@ -43,27 +40,3 @@ https://github.com/Sainna/UnityROSTools.git
 2. Create publishers: `rosManager.CreatePublisher<MessageType>("topic_name")`
 3. Create subscribers: `rosManager.CreateSubscriber<MessageType>("topic_name", callback)`
 4. Everything is handled automatically!
-
-### Logging
-
-The package includes a comprehensive logging system. Configure it for your needs:
-
-```csharp
-using Sainna.Robotics.ROSTools.Logging;
-
-// For production: show only warnings and errors
-ROSLogger.SetLogLevel(LogType.Warning);
-
-// Disable all logging for performance
-ROSLogger.SetLogEnabled(false);
-```
-
-See the [Logging System Guide](manual/logging.md) for complete documentation.
-
-## Manual
-
-- [Service Management](manual/service.md)
-- [Topic Management](manual/topics.md)  
-- [Auto-Reconnect Feature](manual/auto-reconnect.md)
-- [Logging System](manual/logging.md)
-- [Developer Guide](manual/developer-guide.md)
